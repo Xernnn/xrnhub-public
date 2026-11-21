@@ -20,13 +20,13 @@ import com.xern.xrnhub.data.Release
 private val now = System.currentTimeMillis() / 1000.0
 private val rule = HubApp(
     "xrnrule", "time",
-    listOf("Phone", "Laptop", "Browser", "Server"), "xrnrule", "https://example.test/xrnrule", false, "xrnrule",
+    listOf("Phone", "Laptop", "Browser", "Server"), "xrnrule", "https://example.test/xrnrule", true, "xrnrule",
     packageName = "com.xern.xrnrule", web = "/xrnrule/", up = true, since = now - 23 * 86400, records = 27, unit = "reports", week = 13, lastIn = now - 1300,
     released = listOf(Release("phone", "0.2.17", 17), Release("extension", "2.3.6")),
 )
 private val loops = HubApp(
     "xrnloops", "time",
-    listOf("Phone", "Laptop", "Server"), "xrnloops", "https://example.test/xrnloops", false, "xrnloops",
+    listOf("Phone", "Laptop", "Server"), "xrnloops", "https://example.test/xrnloops", true, "xrnloops",
     packageName = "com.xern.xrnloops", web = "/xrnloops/", up = false, records = 960, unit = "check-ins", week = 22, lastIn = now - 400,
 )
 private val social = HubApp(
@@ -35,7 +35,7 @@ private val social = HubApp(
 )
 private val insta = HubApp(
     "xrninsta", "play", listOf("Server", "Telegram"), "xrninsta",
-    "https://example.test/xrninsta", false, "xrninsta", web = "/xrninsta/", up = true, since = now - 2 * 86400, records = 90,
+    "https://example.test/xrninsta", true, "xrninsta", web = "/xrninsta/", up = true, since = now - 2 * 86400, records = 90,
     unit = "songs", week = 7, lastIn = now - 5000,
 )
 private val server = HubApp(

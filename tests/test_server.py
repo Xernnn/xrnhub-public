@@ -626,6 +626,45 @@ class Server(unittest.TestCase):
             self.assertEqual(c.getresponse().status, 413, path)
             c.close()
 
+    def post_raw(self, path, body):
+        """A POST with [body] as it is, not made with json.dumps: (status, the answer's text)."""
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        auth = "Basic " + base64.b64encode(f"{USER}:{PW}".encode()).decode()
+        c.request("POST", path, body=body, headers={"Authorization": auth})
+        with c.getresponse() as res:  # no answer at all raises here
+            answer = res.status, res.read().decode()
+        c.close()
+        return answer
+
+    @staticmethod
+    def deep_event(detail, app=b"xrndeep"):
+        return b'{"events":[{"app":"' + app + b'","kind":"deep","at":1793900000000,"detail":' + detail + b"}]}"
+
+    def test_a_body_nested_too_deep_gets_an_answer_and_adds_nothing(self):
+        # Both fit in MAX_BODY. Past the depth it parses (about 10,000 levels on 3.12, 52,000 on
+        # 3.14), json.loads raises RecursionError, which isn't the ValueError body() caught. On 3.14
+        # a detail of objects 40,000 deep does parse, and then json.dumps, which stores it, gives up
+        # (at about 29,000): no answer either way, and a traceback in the log.
+        bodies = {
+            "objects 40,000 deep": self.deep_event(b'{"a":' * 40_000 + b"0" + b"}" * 40_000),
+            "lists 100,000 deep": self.deep_event(b"[" * 100_000 + b"]" * 100_000),
+        }
+        for what, body in bodies.items():
+            self.assertLess(len(body), xrnhub.MAX_BODY, what)
+            with mock.patch("sys.stderr", new_callable=io.StringIO) as logged:
+                status, text = self.post_raw("/api/events", body)
+            self.assertEqual((400, True), (status, "nested" in text), what)
+            self.assertNotIn("Traceback", logged.getvalue(), what)
+        self.assertEqual(self.hub.log.between(USER, 0, 2**53, app="xrndeep"), [])
+
+    def test_a_body_nested_up_to_the_limit_is_taken(self):
+        def detail(depth):  # {"events": [{"detail": {"a": ...}}]}: the outermost object is level 1
+            return b'{"a":' * (depth - 3) + b"0" + b"}" * (depth - 3)
+        status, text = self.post_raw("/api/events", self.deep_event(detail(xrnhub.MAX_DEPTH), b"xrnlimit"))
+        self.assertEqual((200, {"added": 1}), (status, json.loads(text)))
+        status, text = self.post_raw("/api/events", self.deep_event(detail(xrnhub.MAX_DEPTH + 1), b"xrnlimit"))
+        self.assertEqual((400, True), (status, "nested" in text))
+
     def test_a_refused_body_cannot_pass_for_the_next_request(self):
         got = self.call("POST", "/api/events", {"events": []}, auth=False)
         self.assertEqual(got[0], 401)
@@ -901,6 +940,12 @@ class Monitor(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertTrue(json.loads(data)["ok"])
         self.assertEqual(self.call("POST", "/api/server/restart", {"service": "xrntube"})[0], 429)
+
+    def test_a_service_that_isnt_a_name_is_refused(self):
+        for service in (["xrntube"], {"name": "xrntube"}, 5, None, True):
+            status, _ = self.call("POST", "/api/server/restart", {"service": service})
+            self.assertEqual(status, 400, service)
+        self.assertNotIn(["sv", "restart"], [c[:2] for c in self.phone.ran])
 
     def test_a_page_on_another_site_cant_restart_anything(self):
         # A form another site posts here carries the owner's password if the browser has it.

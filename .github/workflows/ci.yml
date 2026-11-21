@@ -12,13 +12,19 @@ permissions:
 jobs:
   server:
     runs-on: ubuntu-latest
+    # The oldest Python the README supports, and the newest, which the home server runs: how deep
+    # json.loads nests changed in 3.14. Each runs to the end even when the other fails.
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.14"]
+    name: server (Python ${{ matrix.python }})
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v7
         with:
-          # The oldest Python the README supports; the laptop and the phone run newer ones.
-          python-version: "3.11"
+          python-version: ${{ matrix.python }}
           cache: pip
           # No requirements file to key the cache on: this workflow is what names bcrypt.
           cache-dependency-path: .github/workflows/ci.yml

@@ -31,6 +31,13 @@ EXCEPTION = re.compile(r"^[A-Za-z_][\w.]*(?:Error|Exception): ")
 # Lines with an alarming word that say nothing's wrong: Radicale's startup line, and the services'
 # own notes about callers that went away.
 QUIET = re.compile(r"Logging level set to|connection dropped: |caller left a long-poll after ")
+# xrninsta's song bot, its covers bot and the covers sender each log their state when it changes:
+# "bot: ok", "covers bot: badchat: <why>", "covers: missing: <why>". Anything but ok means a bot
+# isn't answering its chat (a chat id that isn't one, another chat's, Telegram refusing) or a cover
+# isn't going out, and the line has no alarming word in it. The lines about one update ("bot: update
+# 9 from chat 4242 ignored: ...") and the covers sender's notes ("covers: first start, ...") don't
+# start with a state.
+BOT_STATE = re.compile(r"^(?:bot|covers bot|covers): ([a-z]+)(?:: |$)")
 # A traceback, as Python and socketserver print one, is many lines that are one error.
 TRACE_START = re.compile(r"^(?:Traceback \(most recent call last\):|Exception occurred during processing of request)")
 TRACE_CHAIN = re.compile(r"^(?:During handling of the above exception|The above exception was the direct cause)")
@@ -108,6 +115,9 @@ def level_of(text):
         return "info"
     if ERROR_WORDS.search(text) or ERROR_START.match(text) or EXCEPTION.match(text):
         return "error"
+    bot = BOT_STATE.match(text)
+    if bot:
+        return "info" if bot[1] == "ok" else "warn"
     return "warn" if WARN_WORDS.search(text) or WARN_START.match(text) else "info"
 
 

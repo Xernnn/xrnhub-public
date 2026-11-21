@@ -1,6 +1,8 @@
 'use strict'
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
 const pages = require('../pages')
 
 const ORIGIN = 'https://server.example.ts.net'
@@ -20,10 +22,21 @@ test('an address is the server\'s origin, https unless it is this computer', () 
 test('each page starts at its own path, the hub\'s at its tab', () => {
   assert.equal(pages.pageUrl(ORIGIN, pages.pageById('today')), `${ORIGIN}/xrnhub/#today`)
   assert.equal(pages.pageUrl(ORIGIN, pages.pageById('habits')), `${ORIGIN}/xrnloops/`)
+  // xrnimg and xrnnote were xrnphotos and xrnnotes until 2026-11-21; their pages keep their ids.
+  assert.equal(pages.pageUrl(ORIGIN, pages.pageById('photos')), `${ORIGIN}/xrnimg/`)
+  assert.equal(pages.pageUrl(ORIGIN, pages.pageById('notes')), `${ORIGIN}/xrnnote/`)
+  assert.deepEqual([pages.pageById('photos').service, pages.pageById('notes').service], ['xrnimg', 'xrnnote'])
   assert.equal(pages.pageById('calendars'), null, 'Radicale\'s page is left out')
   const ids = pages.PAGES.map(page => page.id)
   assert.equal(new Set(ids).size, ids.length)
   assert.deepEqual(pages.PAGES.slice(0, 5).map(page => page.id), ['server', 'today', 'review', 'apps', 'habits'], 'the hub\'s own, first, in its order')
+})
+
+test('each app page\'s logo is one of the hub\'s', () => {
+  const web = path.join(__dirname, '..', '..', 'web', 'apps')
+  for (const page of pages.PAGES.filter(p => p.group === 'apps')) {
+    assert.ok(fs.existsSync(path.join(web, page.icon)), page.icon)
+  }
 })
 
 test('the hub\'s Nudges tab is gone, and what named it lands on Today', () => {
@@ -146,7 +159,7 @@ test('a password box is answered only for the server itself, by the login its re
   assert.equal(pages.answersLogin({ ...box, scheme: 'digest' }, `${ORIGIN}/xrnhome/`, ORIGIN), false)
   assert.equal(pages.answersLogin({ ...box, host: 'elsewhere.example' }, 'https://elsewhere.example/', ORIGIN), false)
   assert.equal(pages.answersLogin(box, 'http://server.example.ts.net/xrnhome/', ORIGIN), false, 'not over plain http')
-  for (const realm of ['xrnhub', 'xrnloops', 'xrnrule', 'xrnwal', 'xrnhome', 'xrninsta', 'xrnphotos']) assert.equal(pages.loginGroup(realm), 'sync', realm)
+  for (const realm of ['xrnhub', 'xrnloops', 'xrnrule', 'xrnwal', 'xrnhome', 'xrninsta', 'xrnimg', 'xrnnote']) assert.equal(pages.loginGroup(realm), 'sync', realm)
   assert.equal(pages.loginGroup('XrnTube'), 'calendar')
   assert.equal(pages.loginGroup('Radicale - Password Required'), 'calendar')
   assert.equal(pages.loginGroup('Something else'), null)

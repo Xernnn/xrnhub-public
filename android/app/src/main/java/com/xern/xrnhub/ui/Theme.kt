@@ -187,25 +187,32 @@ private class ServiceColor(val light: Color, val dark: Color = light)
 
 private val SYSTEM_COLOR = ServiceColor(Color(0xFF52525B), Color(0xFFA1A1AA))
 
-/** Each service's logo tile colour (web/apps/), the same map as the web page's style.css tokens. */
+/**
+ * Each service's logo tile colour (web/apps/), the same map as the web page's style.css tokens. In
+ * dark mode the four dark tiles step up to just past 3:1 on the card, and xrntube and xrnnote step
+ * up with them so each family's pair stays apart; xrnhub steps above the system grey.
+ */
 private val SERVICE_COLORS = mapOf(
-    "calendar" to ServiceColor(Color(0xFF1C6FD8), Color(0xFF2F7FE9)),
-    "xrnloops" to ServiceColor(Color(0xFF2B9348)),
-    "xrnrule" to ServiceColor(Color(0xFFE8590C)),
-    "xrnwal" to ServiceColor(Color(0xFF5C940D)),
-    "xrninsta" to ServiceColor(Color(0xFF7048E8), Color(0xFF9775FA)),
-    "xrnfit" to ServiceColor(Color(0xFF7048E8), Color(0xFF9775FA)),
-    "xrnhome" to ServiceColor(Color(0xFFB8860B)),
-    "xrntube" to ServiceColor(Color(0xFFE03131)),
-    "xrnhub" to ServiceColor(Color(0xFF475569), Color(0xFF94A3B8)),
+    "calendar" to ServiceColor(Color(0xFF308FFE)),
+    "xrnloops" to ServiceColor(Color(0xFF037200), Color(0xFF2C8B27)),
+    "xrnrule" to ServiceColor(Color(0xFFE86C05)),
+    "xrnwal" to ServiceColor(Color(0xFF7B9C17)),
+    "xrninsta" to ServiceColor(Color(0xFF592AC4), Color(0xFF7F5DF6)),
+    "xrnfit" to ServiceColor(Color(0xFFA20129), Color(0xFFD54451)),
+    "xrnhome" to ServiceColor(Color(0xFF6C6104), Color(0xFF847A29)),
+    "xrntube" to ServiceColor(Color(0xFFFF2238), Color(0xFFFF847E)),
+    "xrnhub" to ServiceColor(Color(0xFF8B8F9B), Color(0xFFC0C4D1)),
+    "xrnnote" to ServiceColor(Color(0xFFB68A04), Color(0xFFCDA02F)),
+    "xrnimg" to ServiceColor(Color(0xFF0F889F)),
     "tailscale" to SYSTEM_COLOR,
     "ssh" to SYSTEM_COLOR,
 )
 
 /**
- * xrnloops and xrnwal both have green logos, and xrninsta and xrnfit violet ones; among several
- * lines xrnwal's and xrnfit's are dashed so each pair still tells apart. Stacks keep them apart
- * by SERVICE_ORDER: other services sit between them.
+ * For red-green colour blindness the tiles of a lightness run together: xrnwal's yellow-green with
+ * xrntube's red, xrnnote's yellow and xrnrule's orange, and xrnfit's heart red with xrnloops' and
+ * xrnhome's dark greens. Among several lines xrnwal's and xrnfit's are dashed so those still tell
+ * apart. Stacks keep them apart by SERVICE_ORDER: other services sit between them.
  */
 private val DASHED_SERVICES = setOf("xrnwal", "xrnfit")
 

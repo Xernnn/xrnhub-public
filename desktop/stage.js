@@ -10,7 +10,7 @@ const path = require('node:path')
 const HERE = __dirname
 const WEB = path.join(HERE, '..', 'web')
 const VENDOR = path.join(HERE, 'shell', 'vendor')
-const LOGOS = ['xrnloops.svg', 'xrnrule.svg', 'xrnhome.png', 'xrninsta.svg', 'xrnphotos.svg']
+const LOGOS = ['xrnloops.svg', 'xrnrule.svg', 'xrnhome.svg', 'xrninsta.svg', 'xrnimg.svg', 'xrnnote.svg']
 
 fs.rmSync(VENDOR, { recursive: true, force: true })
 fs.mkdirSync(path.join(VENDOR, 'apps'), { recursive: true })

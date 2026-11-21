@@ -44,7 +44,10 @@ SERVICES = (
             Former("xrnwallet-sync", "xrnwallet-sync", "xrnwallet-sync.py")),
     Service("xrnhub", "xrnhub", 5238, "/health", "xrnhub", False, "xrnhub.py"),
     Service("xrninsta", "xrninsta", 5239, "/health", "xrninsta", True, "xrninsta.py"),
-    Service("xrnphotos", "xrnphotos-sync", 5242, "/health", "xrnphotos-sync", True, "xrnphotos-sync.py"),
+    Service("xrnnote", "xrnnote-sync", 5241, "/health", "xrnnote-sync", True, "xrnnote-sync.py",
+            Former("xrnnotes-sync", "xrnnotes-sync", "xrnnotes-sync.py")),
+    Service("xrnimg", "xrnimg-sync", 5242, "/health", "xrnimg-sync", True, "xrnimg-sync.py",
+            Former("xrnphotos-sync", "xrnphotos-sync", "xrnphotos-sync.py")),
     Service("tailscale", "tailscaled", None, None, None, False, "tailscaled"),
     Service("ssh", "sshd", None, None, None, False, "sshd"),
 )

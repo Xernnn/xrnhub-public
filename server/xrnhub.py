@@ -93,6 +93,10 @@ from hublib.sources import Sources, parse_day, read_json  # noqa: E402
 from hublib.watcher import FIT, LEVELS, BadRestart, TooSoon, Watcher  # noqa: E402
 
 MAX_BODY = 256 * 1024
+# How many lists and objects deep a request body may go. The apps' own nest a handful. Within
+# MAX_BODY, json.loads raises RecursionError past some 10,000 levels (52,000 on Python 3.14), and on
+# 3.14 json.dumps, which stores an event's detail, gives up on objects some 29,000 deep.
+MAX_DEPTH = 64
 PREFIX = "/xrnhub"
 TICK_S = 60  # how often the background work looks for something to do
 RULES_EVERY_S = 300
@@ -314,6 +318,20 @@ def host_key(host):
     return host.strip().lower().removesuffix(":443").removesuffix(":80")
 
 
+def nested_within(value, limit):
+    """Whether no list or object in [value] sits more than [limit] deep, the outermost being 1.
+    Walked with a list of its own, not by recursion, so any depth is measured without a stack."""
+    todo = [(value, 1)] if isinstance(value, (dict, list)) else []
+    while todo:
+        value, depth = todo.pop()
+        if depth > limit:
+            return False
+        for v in value.values() if isinstance(value, dict) else value:
+            if isinstance(v, (dict, list)):
+                todo.append((v, depth + 1))
+    return True
+
+
 ETAGS = {}  # web file -> ((mtime ns, size, inode), its ETag)
 
 
@@ -429,10 +447,19 @@ class Handler(BaseHTTPRequestHandler):
         raw = self.rfile.read(length)
         self.body_read = True
         try:
-            return json.loads(raw)
+            doc = json.loads(raw)
+            deep = not nested_within(doc, MAX_DEPTH)
         except ValueError:
             self.send(400, "body must be JSON")
             return None
+        except RecursionError:  # past the parser's depth: it ended with no answer, and a traceback
+            deep = True
+        if deep:
+            # Or parsed, and too deep to store: an event's detail is written with json.dumps, which
+            # raised RecursionError on 3.14. Refused before anything is done with it.
+            self.send(400, f"body nested deeper than {MAX_DEPTH} levels")
+            return None
+        return doc
 
     def who(self, token_ok=False):
         """The signed-in user, or None once a refusal has been answered. [token_ok] lets a read-only

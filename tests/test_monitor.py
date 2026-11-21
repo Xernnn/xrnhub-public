@@ -8,6 +8,7 @@ import threading
 import time
 import unittest
 from datetime import datetime, timedelta
+from unittest import mock
 
 from support import USER, FakePhone, make_loops, habit, stamp_of, write_json
 from hublib import health, logscan, machine, metrics
@@ -886,8 +887,8 @@ class Holdings(Base):
         found = {name: apps[name]["records"] for name in ("calendar", "xrnloops", "xrnrule", "xrnhome", "xrntube", "xrnwal")}
         self.assertEqual(found, {"calendar": 2, "xrnloops": 2, "xrnrule": 2, "xrnhome": 1, "xrntube": 3, "xrnwal": 1})
 
-    def test_xrnphotos_counts_its_items_but_not_its_trash_and_when_each_came_in(self):
-        folder = os.path.join(self.phone.home, "xrnphotos-sync", "data", "users", USER)
+    def test_xrnimg_counts_its_items_but_not_its_trash_and_when_each_came_in(self):
+        folder = os.path.join(self.phone.home, "xrnimg-sync", "data", "users", USER)
         os.makedirs(os.path.join(folder, "blobs", "ab"))
         with open(os.path.join(folder, "blobs", "ab", "ab" * 32), "wb") as f:
             f.write(b"a made-up photo")
@@ -897,17 +898,32 @@ class Holdings(Base):
                                                                   ("c", (NOW - 86400) * 1000, NOW * 1000)])
         db.close()
         doc = self.inventory.sweep(NOW)
-        app = self.by_name(doc)["xrnphotos"]
+        app = self.by_name(doc)["xrnimg"]
         self.assertEqual((app["records"], app["unit"]), (2, "items"))
         self.assertGreater(app["bytes"], 0)
-        self.assertEqual(doc["fed"]["apps"]["xrnphotos"][-1], 2)
+        self.assertEqual(doc["fed"]["apps"]["xrnimg"][-1], 2)
 
     def test_a_photo_library_that_cant_be_read_counts_nothing(self):
-        folder = os.path.join(self.phone.home, "xrnphotos-sync", "data", "users", USER)
+        folder = os.path.join(self.phone.home, "xrnimg-sync", "data", "users", USER)
         os.makedirs(folder)
         with open(os.path.join(folder, "photos.sqlite"), "w") as f:
             f.write("not a database")
-        self.assertEqual(self.by_name(self.inventory.sweep(NOW))["xrnphotos"]["records"], 0)
+        self.assertEqual(self.by_name(self.inventory.sweep(NOW))["xrnimg"]["records"], 0)
+
+    def test_xrnnote_is_counted_by_its_files_and_never_opened(self):
+        # Every note there is ciphertext: the hub has its files' number and size, and reads none.
+        folder = os.path.join(self.phone.home, "xrnnote-sync", "data", "users", USER)
+        self.phone.put(os.path.join(folder, "notes.sqlite"), "\x01" + "made-up ciphertext" * 10)
+        self.phone.put(os.path.join(folder, "att", "Qm9vb2tzaGVsZjEyMzQ1Ng"), "\x01" + "an image" * 50)
+        with mock.patch("sqlite3.connect", wraps=sqlite3.connect) as opened, \
+                mock.patch("builtins.open", wraps=open) as read:
+            doc = self.inventory.sweep(NOW)
+        self.assertTrue(opened.called and read.called)  # the others are read, so these see every open
+        self.assertFalse([c for c in opened.call_args_list + read.call_args_list if "xrnnote" in str(c)])
+        app = self.by_name(doc)["xrnnote"]
+        self.assertEqual((app["records"], app["unit"]), (2, "files"))
+        self.assertGreater(app["bytes"], 0)
+        self.assertNotIn("xrnnote", doc["fed"]["apps"])
 
     def test_xrnfits_health_counts_as_its_own_app(self):
         # The health records live in the hub's hub.sqlite, but they're xrnfit's: a row a reading,
@@ -1112,6 +1128,83 @@ class Renamed(Base):
         self.assertEqual(store.rows("SELECT name, reqs FROM traffic"), [("xrnwal", 5)])
         self.assertEqual(list(store.open_incidents()), [("down", "xrnwal")])
         self.assertEqual(store.log_position("xrnwal"), (42, 1000))  # its log goes on from the same line
+
+
+class RenamedNoteAndImg(Base):
+    """xrnnote was xrnnotes and xrnimg was xrnphotos until 2026-11-21. As with xrnwal, each one's
+    deploy moves its folder, runit service and log, before the hub's or after it."""
+
+    OLD = {"xrnnote": "xrnnotes-sync", "xrnimg": "xrnphotos-sync"}
+
+    def setUp(self):
+        super().setUp()
+        self.mac.system = lambda: {"uptime": 1000 + self.clock[0] - NOW, "load": [0, 0, 0], "procs": 1}
+        # The phone before their deploys: each one's service, program and data under its old name.
+        self.old_home = {}
+        for name, old in self.OLD.items():
+            service = machine.BY_NAME[name]
+            at = machine.SERVICES.index(service)
+            shutil.rmtree(os.path.join(self.phone.prefix, "var", "service", service.runit))
+            self.phone.service(old, 100 + at, since=NOW - 86400)
+            self.phone.process(9001 + at, parent=9000, name="runsv", argv=["runsv", old])
+            self.old_home[name] = os.path.join(self.phone.home, old)
+            self.phone.process(100 + at, parent=9001 + at,
+                               argv=["python", f"{self.old_home[name]}/{old}.py", "--port", str(service.port)])
+        notes = os.path.join(self.old_home["xrnnote"], "data", "users", USER)
+        self.phone.put(os.path.join(notes, "notes.sqlite"), "\x01" + "made-up ciphertext" * 10)
+        library = os.path.join(self.old_home["xrnimg"], "data", "users", USER)
+        os.makedirs(library)
+        with sqlite3.connect(os.path.join(library, "photos.sqlite")) as db:
+            db.execute("CREATE TABLE items(id TEXT, created INTEGER, trashed_at INTEGER)")
+            db.executemany("INSERT INTO items VALUES(?, ?, NULL)", [("a", NOW * 1000), ("b", NOW * 1000)])
+        db.close()
+
+    def open_kinds(self):
+        return sorted((i["kind"], i["target"]) for i in self.store.incidents() if i["ended"] is None)
+
+    def test_their_records_are_counted_in_the_old_folders_until_the_new_ones_are_there(self):
+        doc = self.inventory.sweep(NOW)
+        apps = {a["name"]: a for a in doc["apps"]}
+        self.assertEqual((apps["xrnnote"]["records"], apps["xrnnote"]["unit"]), (1, "files"))
+        self.assertEqual((apps["xrnimg"]["records"], apps["xrnimg"]["unit"]), (2, "items"))
+        self.assertEqual(doc["fed"]["apps"]["xrnimg"][-1], 2)
+        # Once a deploy has moved the library, the new folder is read, with no restart.
+        os.rename(self.old_home["xrnimg"], os.path.join(self.phone.home, "xrnimg-sync"))
+        self.assertEqual({a["name"]: a for a in self.inventory.sweep(NOW)["apps"]}["xrnimg"]["records"], 2)
+
+    def test_notes_last_sync_is_read_from_the_old_folder(self):
+        self.assertEqual(self.source(USER).path("xrnnote", "notes.sqlite"),
+                         os.path.join(self.old_home["xrnnote"], "data", "users", USER, "notes.sqlite"))
+
+    def test_their_services_are_watched_under_the_old_names_and_restart_there(self):
+        self.clock[0] += 60
+        self.watcher.minute_tick(self.clock[0])
+        self.assertEqual(self.open_kinds(), [])
+        for name, old in self.OLD.items():
+            self.assertEqual(self.mac.service(machine.BY_NAME[name])["state"], "run", name)
+            self.watcher.restart(name)
+            self.assertEqual(self.phone.ran[-1][2], os.path.join(self.phone.prefix, "var", "service", old))
+
+    def test_a_copy_left_running_under_an_old_name_is_still_caught(self):
+        self.phone.process(555, parent=1, argv=["python", f"{self.old_home['xrnimg']}/xrnphotos-sync.py", "--port", "5242"])
+        self.clock[0] += 60
+        self.watcher.minute_tick(self.clock[0])
+        self.assertEqual(self.open_kinds(), [("unsupervised", "xrnimg")])
+
+    def test_their_history_under_the_old_names_goes_on_under_the_new(self):
+        folder = os.path.join(self.root, "before")
+        os.makedirs(folder)
+        db = sqlite3.connect(os.path.join(folder, "monitor.sqlite"))
+        db.executescript(metrics.SCHEMA)
+        db.executemany("INSERT INTO service(span, at, name, up) VALUES(60, ?, ?, 1)",
+                       [(NOW - 120, "xrnnotes"), (NOW - 120, "xrnphotos")])
+        db.execute("INSERT INTO data_days(day, app, bytes, records) VALUES('2026-11-20', 'xrnphotos', 10, 3)")
+        db.commit()
+        db.close()
+        store = metrics.Store(folder)
+        self.addCleanup(store.db.close)
+        self.assertEqual(sorted(store.rows("SELECT name FROM service")), [("xrnimg",), ("xrnnote",)])
+        self.assertEqual(store.rows("SELECT app, records FROM data_days"), [("xrnimg", 3)])
 
 
 class LogSearch(Base):
@@ -1360,6 +1453,36 @@ class LogRatings(Base):
         self.write("xrnrule-sync", '203.0.113.9 "PUT /state HTTP/1.1" 412 -', '203.0.113.9 "HEAD /state HTTP/1.1" 501 -',
                    '203.0.113.9 "POST /state HTTP/1.1" 500 -')
         self.assertEqual(self.counted(), {"info": 0, "warn": 1, "error": 1})
+
+    def test_a_bot_that_isnt_ok_is_a_warning_on_the_server_page(self):
+        # xrninsta logs its bots' state when it changes. From 18 to 21 Nov 2026 the song bot answered
+        # no one, and when it learned to say why ("bot: badchat: ..."), the hub counted that as info,
+        # so the Server page never showed it.
+        self.write("xrninsta",
+                   'bot: badchat: the "chat" in bot.json is "<your chat id>", which isn\'t a chat id '
+                   "(a number such as 123456789), so it answers no one",
+                   'bot: update 9 from chat 1234 ignored: the "chat" in bot.json is "<your chat id>"',
+                   'covers bot: otherchat: a message came from chat 4242, but the "chat" under "covers" in '
+                   "bot.json is 1234",
+                   "covers: missing: no day-12.jpg in /data/covers",
+                   "covers: first start, after 2am: Day 12's cover is taken as sent by the Apps Script",
+                   "bot: ok")
+        self.assertEqual(self.counted(), {"info": 3, "warn": 3, "error": 0})
+        groups = self.store.log_groups(self.clock[0] - 3600)
+        self.assertEqual({(g["service"], g["level"]) for g in groups}, {("xrninsta", "warn")})
+        self.assertEqual(sorted(": ".join(g["text"].split(": ")[:2]) for g in groups),
+                         ["bot: badchat", "covers bot: otherchat", "covers: missing"])
+
+    def test_a_bots_state_is_a_warning_unless_it_is_ok(self):
+        for state in ("badchat", "nochat", "otherchat", "refused", "unreachable", "webhook", "twice", "error"):
+            for name in ("bot", "covers bot"):
+                self.assertEqual(logscan.level_of(f"{name}: {state}: why"), "warn", f"{name}: {state}")
+        for state in ("missing", "nozone", "refused", "unreachable", "badchat"):
+            self.assertEqual(logscan.level_of(f"covers: {state}: why"), "warn", state)
+        self.assertEqual(logscan.level_of("bot: error: ConnectionResetError: [Errno 104] reset"), "warn")
+        for line in ("bot: ok", "covers bot: ok", "covers: ok", "bot: update 9 from chat 4242 ignored: why",
+                     "covers: first start, after 2am: why", "robot: badchat: not xrninsta's"):
+            self.assertEqual(logscan.level_of(line), "info", line)
 
     def test_lines_that_only_sound_alarming_are_info(self):
         self.write("radicale", "[2026-11-06 01:09:14 +0000] [1/MainThread] [WARNING] Logging level set to: 'WARNING'",

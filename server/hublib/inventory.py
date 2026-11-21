@@ -31,16 +31,22 @@ UNITS = {
     "xrnhome": "items",
     "xrnwal": "bills",
     "xrninsta": "songs",
-    "xrnphotos": "items",
+    "xrnimg": "items",
+    "xrnnote": "files",
     "xrnhub": "events",
     "xrnfit": "readings",
 }
 
 
+# Apps whose data the hub must not open, counted by their files instead: every note, task, folder and
+# attachment xrnnote holds is ciphertext, so its files' number, sizes and times are all there is.
+BY_FILES = {"xrnnote"}
+
+
 def photo_items(home, user):
-    """When each of a user's xrnphotos items arrived (ms), trash left out, read from its database
+    """When each of a user's xrnimg items arrived (ms), trash left out, read from its database
     read-only; nothing when there is none or it can't be read."""
-    path = os.path.join(home, "xrnphotos-sync", "data", "users", user, "photos.sqlite")
+    path = os.path.join(home_folder(home, "xrnimg-sync"), "data", "users", user, "photos.sqlite")
     if not os.path.isfile(path):
         return []
     try:
@@ -169,8 +175,8 @@ class Inventory:
             counts["xrntube"] += src.channel_count()
         for user in self.users():
             for created in photo_items(self.home, user):
-                counts["xrnphotos"] += 1
-                came_in("xrnphotos", created / 1000)
+                counts["xrnimg"] += 1
+                came_in("xrnimg", created / 1000)
         songs, _ = insta_songs(self.home)
         counts["xrninsta"] += len(songs)
         for song in songs:
@@ -224,7 +230,7 @@ class Inventory:
                 size = self.measure(service, fed)
                 apps[service.name] = {
                     "name": service.name, "bytes": size["bytes"], "extra": size["extra"], "files": size["files"],
-                    "records": size["events"], "unit": UNITS[service.name],
+                    "records": size["files"] if service.name in BY_FILES else size["events"], "unit": UNITS[service.name],
                 }
         if self.log:
             took, inside = self.health_bytes()

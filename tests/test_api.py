@@ -10,6 +10,7 @@ import tempfile
 import threading
 import unittest
 from datetime import datetime
+from unittest import mock
 
 import bcrypt
 
@@ -490,6 +491,12 @@ class Health(Folder):
         self.assertIsNotNone(doc["sources"]["health"]["updated"])
 
 
+def token_parts(token):
+    """(id, secret) of a token. The secret is URL-safe base64, whose letters include "_", so a token
+    can't be split on "_": one in 64 secrets starts with it and about half hold one."""
+    return tokens.TOKEN.fullmatch(token).groups()
+
+
 class Tokens(unittest.TestCase):
     def setUp(self):
         self.data = tempfile.mkdtemp(prefix="xrnhub-tokens-")
@@ -503,12 +510,30 @@ class Tokens(unittest.TestCase):
         self.assertEqual(self.store.user_for(f"Bearer {token}"), USER)
         with open(self.store.path(USER)) as f:
             kept = f.read()
-        self.assertNotIn(token.split("_")[2], kept)
+        self.assertNotIn(token_parts(token)[1], kept)
         self.assertEqual(os.stat(self.store.path(USER)).st_mode & 0o777, 0o600)
+
+    def test_a_secret_with_underscores_reads_and_is_never_kept(self):
+        # This test split the token on "_" and looked for the third piece in the file: for a secret
+        # starting with "_" that was "", which every file holds, and for one with "_" a little way in,
+        # a letter or two that the hashes often hold. About one run in 40 failed.
+        secret = "_" + "Ab_9" * 10 + "_A"
+        drawn = {32: base64.urlsafe_b64decode(secret + "="), 4: bytes.fromhex("0a0b0c0d")}
+        with mock.patch.object(tokens.secrets, "token_bytes", side_effect=lambda n: drawn[n]):
+            token = self.store.add(USER, "scripts")
+        self.assertEqual(token, f"xrnhub_0a0b0c0d_{secret}")
+        self.assertEqual(token_parts(token), ("0a0b0c0d", secret))
+        self.assertEqual(self.store.user_for(f"Bearer {token}"), USER)
+        with open(self.store.path(USER)) as f:
+            kept = f.read()
+        self.assertNotIn(secret, kept)
+        self.assertNotIn(token_parts(token)[1], kept)
+        self.assertTrue(self.store.revoke(USER, "0a0b0c0d"))
+        self.assertIsNone(self.store.user_for(f"Bearer {token}"))
 
     def test_a_wrong_revoked_or_orphaned_token_reads_as_no_one(self):
         token = self.store.add(USER, "scripts")
-        token_id = token.split("_")[1]
+        token_id = token_parts(token)[0]
         self.assertIsNone(self.store.user_for(f"Bearer {token[:-1]}{'A' if token[-1] != 'A' else 'B'}"))
         self.assertIsNone(self.store.user_for(f"Basic {token}"))
         self.assertIsNone(self.store.user_for("Bearer xrnhub_zz_short"))
@@ -540,7 +565,7 @@ class Tokens(unittest.TestCase):
         self.assertIn("laptop", out.getvalue())
         self.assertNotIn(token, out.getvalue())
         with contextlib.redirect_stderr(io.StringIO()):
-            tokens.cli(["revoke", token.split("_")[1], *args])
+            tokens.cli(["revoke", token_parts(token)[0], *args])
         self.assertIsNone(self.store.user_for(f"Bearer {token}"))
         with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
             tokens.cli(["add", "x", "--user", "nobody", *args])

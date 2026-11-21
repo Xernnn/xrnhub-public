@@ -65,14 +65,18 @@ private fun appLogo(name: String): Int? = when (name) {
     "xrnrule" -> R.drawable.logo_xrnrule
     "xrnwal" -> R.drawable.logo_xrnwal
     "xrnhome" -> R.drawable.logo_xrnhome
-    "xrnphotos" -> R.drawable.logo_xrnphotos
+    "xrnimg" -> R.drawable.logo_xrnimg
+    "xrnnote" -> R.drawable.logo_xrnnote
     "xrnfit" -> R.drawable.logo_xrnfit
     "xrnmail" -> R.drawable.logo_xrnmail
     "xrntube" -> R.drawable.logo_xrntube
     "xrnsoc" -> R.drawable.logo_xrnsoc
+    "xrnmoni" -> R.drawable.logo_xrnmoni
+    "xrnkey" -> R.drawable.logo_xrnkey
     "xrnsheet" -> R.drawable.logo_xrnsheet
     "xrninsta" -> R.drawable.logo_xrninsta
     "xrnchips" -> R.drawable.logo_xrnchips
+    "xrnlatro" -> R.drawable.logo_xrnlatro
     "xrnhub" -> R.drawable.logo_xrnhub
     "home-server" -> R.drawable.logo_home_server
     else -> null

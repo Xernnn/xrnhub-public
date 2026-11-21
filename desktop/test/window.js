@@ -208,7 +208,8 @@ async function main() {
   await until('the status', async () => (await sidebar(shell)).status !== 'Checking…')
   side = await sidebar(shell)
   assert.ok(!/Can't reach|Signed out/.test(side.status), side.status)
-  assert.equal(await evaluate(hub, 'localStorage.getItem("xrn.signedIn")'), 'true', 'the habits and blocks pages will try the cookie')
+  // Set from the hub's page just after it signs in, so the page can be up a moment before it is.
+  await until('the habits and blocks pages will try the cookie', () => evaluate(hub, 'localStorage.getItem("xrn.signedIn") === "true"'))
   ok(`setting up signs the hub in, without its own sign-in form (sidebar: ${side.status})`)
 
   // The page is drawn exactly on the sheet, in a frame of the theme's colours.
@@ -254,7 +255,7 @@ async function main() {
 
   // Nudges is a tab no more, here or in the hub's own header; an old #nudges address shows Today.
   assert.deepEqual(await evaluate(shell, '[...document.querySelectorAll(".item")].map(item => item.dataset.page)'),
-    ['server', 'today', 'review', 'apps', 'habits', 'blocks', 'home', 'insta'])
+    ['server', 'today', 'review', 'apps', 'habits', 'blocks', 'home', 'insta', 'photos', 'notes'])
   assert.equal(await evaluate(hub, 'document.querySelector(\'a[href="#nudges"]\')'), null)
   await evaluate(hub, 'location.hash = "#nudges"')
   await until('Today from #nudges', async () => (await sidebar(shell)).current === 'today' &&

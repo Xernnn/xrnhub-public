@@ -15,8 +15,8 @@ can do to another service is restart it, when you press the button. What it keep
 the health xrnfit sends it, the events other apps report, its nudge rules, its API tokens and the
 monitor's history.
 
-It comes three ways: the web pages the server hands out, a phone app (`android/`, 0.3.0) and a
-laptop window (`desktop/`, 0.1.1). All three read the same API.
+It comes three ways: the web pages the server hands out, a phone app (`android/`, 0.3.2) and a
+laptop window (`desktop/`, 0.1.2). All three read the same API.
 
 The public repo is a copy, published from a private working repo by `scripts/publish-public.sh`:
 each snapshot is one commit, with no history, checked first for private addresses, keys and names.
@@ -135,7 +135,7 @@ depends on hovering or colour.
 
 <img src="docs/screenshots/apps.png" alt="Apps: a row of every project's tile, then a card for each with where it runs, its server and how long it's been up, what it holds, its last sync, its released versions and whether its repo is public">
 
-All fourteen projects, each with where it runs (phone, laptop, browser, server, Telegram), whether
+All nineteen projects, each with where it runs (phone, laptop, browser, server, Telegram), whether
 its repo is public, and what the hub can see of it: which server it talks to (xrnfit's is the hub)
 and whether that's up, what it holds and how much came in this week, when it last synced, and the
 versions the server hands out. The tiles along the top jump to each card. Cards with as many facts
@@ -171,7 +171,7 @@ blocklist and mail are left out.
 The phone app's Overview, Review and Apps, rendered from its Compose previews with made-up data
 (the page tabs and the bottom bar aren't part of the previews).
 
-`android/` is a native Android app, in Kotlin and Compose (0.3.0, build 12; Android 8 and up), with
+`android/` is a native Android app, in Kotlin and Compose (0.3.2, build 14; Android 8 and up), with
 the Server pages (Overview, Services, Traffic, Data, Security, Logs), Review and Apps. Today stays
 on the web page, and so does fixing a habit: the day sheet shows them, but the app can't tick. It
 reads the same API as the page, so a change to a reading on the server reaches both. Its charts are
@@ -230,16 +230,17 @@ without a phone: `android preview render "?:app" --fqn=com.xern.xrnhub.ui.Overvi
 
 ## Laptop app
 
-<img src="docs/screenshots/laptop-app.png" alt="The laptop app in a dark theme: the sidebar with Server, Today, Review and Apps, then Habits, Blocks, Home and Insta, and the Review page on a rounded sheet beside it">
+<img src="docs/screenshots/laptop-app.png" alt="The laptop app in a dark theme: the sidebar with Server, Today, Review and Apps, then Habits, Blocks, Home, Insta, Photos and Notes, each with its app's tile, and the Review page on a rounded sheet beside it">
 
 The laptop app on Review, in a made-up dark desktop theme.
 
-`desktop/` (0.1.1) is a window that holds every page on the home server, so none of them needs a
+`desktop/` (0.1.2) is a window that holds every page on the home server, so none of them needs a
 browser tab: the hub's Server, Today, Review and Apps down a sidebar, then the habits web app,
-xrnrule's Blocks page, xrnhome's laptop version and the song list. Each page is the server's own,
-drawn on a rounded sheet beside the sidebar and kept loaded once opened, so going back to one is
-instant and it is where you left it. A link from one page to another (the hub's Habits icon,
-the habits app's Blocks button) switches pages; a link to anywhere else opens in the usual browser.
+xrnrule's Blocks page, xrnhome's laptop version, the song list, xrnimg's photo library and
+xrnnote's notes. Each page is the server's own, drawn on a rounded sheet beside the sidebar and
+kept loaded once opened, so going back to one is instant and it is where you left it. A link from
+one page to another (the hub's Habits icon, the habits app's Blocks button) switches pages; a link
+to anywhere else opens in the usual browser.
 
 The first start asks for the server's address and the sync password, and signs every page in at
 once. The password is kept in the system keyring, which answers the pages that ask for it with a

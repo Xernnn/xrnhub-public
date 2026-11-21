@@ -15,9 +15,10 @@ const PAGES = [
   { id: 'apps', label: 'Apps', group: 'hub', view: 'hub', path: '/xrnhub/', hash: 'apps', icon: 'apps' },
   { id: 'habits', label: 'Habits', group: 'apps', view: 'habits', path: '/xrnloops/', service: 'xrnloops', icon: 'xrnloops.svg' },
   { id: 'blocks', label: 'Blocks', group: 'apps', view: 'blocks', path: '/xrnrule/', service: 'xrnrule', icon: 'xrnrule.svg' },
-  { id: 'home', label: 'Home', group: 'apps', view: 'home', path: '/xrnhome/', service: 'xrnhome', icon: 'xrnhome.png' },
+  { id: 'home', label: 'Home', group: 'apps', view: 'home', path: '/xrnhome/', service: 'xrnhome', icon: 'xrnhome.svg' },
   { id: 'insta', label: 'Insta', group: 'apps', view: 'insta', path: '/xrninsta/', service: 'xrninsta', icon: 'xrninsta.svg' },
-  { id: 'photos', label: 'Photos', group: 'apps', view: 'photos', path: '/xrnphotos/', service: 'xrnphotos', icon: 'xrnphotos.svg' }
+  { id: 'photos', label: 'Photos', group: 'apps', view: 'photos', path: '/xrnimg/', service: 'xrnimg', icon: 'xrnimg.svg' },
+  { id: 'notes', label: 'Notes', group: 'apps', view: 'notes', path: '/xrnnote/', service: 'xrnnote', icon: 'xrnnote.svg' }
 ]
 // Radicale's own page (/.web/) isn't here: it only makes and renames calendars, which xrncal does,
 // and it asks for the calendar password every time, in a look of its own.
@@ -30,7 +31,7 @@ const HUB_TABS = new Set(PAGES.filter(page => page.view === 'hub').map(page => p
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]'])
 // The sync password's services, by the realm each names when it asks for a password. XrnTube and
 // Radicale take the calendar password instead.
-const SYNC_REALMS = new Set(['xrnhub', 'xrnloops', 'xrnrule', 'xrnwal', 'xrnhome', 'xrninsta', 'xrnphotos'])
+const SYNC_REALMS = new Set(['xrnhub', 'xrnloops', 'xrnrule', 'xrnwal', 'xrnhome', 'xrninsta', 'xrnimg', 'xrnnote'])
 const PERMISSIONS = new Set(['clipboard-sanitized-write', 'fullscreen'])
 const OUTSIDE_GAP_MS = 1000
 const REFUSED_WITHIN_MS = 10_000

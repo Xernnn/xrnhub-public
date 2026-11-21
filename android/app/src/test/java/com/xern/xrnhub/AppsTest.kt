@@ -32,7 +32,7 @@ class AppsTest {
     @Test fun the_hubs_answer_reads_in_full() {
         val doc = fixture()
         assertTrue(doc.owner)
-        assertEquals(15, doc.apps.size)
+        assertEquals(19, doc.apps.size)
         assertEquals(listOf("time", "life", "focus", "play", "server"), doc.groups.map { it.id })
         val rule = doc.apps.first { it.name == "xrnrule" }
         assertEquals("com.xern.xrnrule", rule.packageName)
@@ -41,7 +41,8 @@ class AppsTest {
         assertEquals("/xrnrule/", rule.web)
         assertEquals(true, rule.up)
         assertTrue(doc.apps.first { it.name == "xrnhome" }.isPublic)
-        assertFalse(rule.isPublic)
+        assertTrue(rule.isPublic)
+        assertFalse(doc.apps.first { it.name == "xrnhub" }.isPublic)
         assertEquals("check-ins", doc.apps.first { it.name == "xrnloops" }.unit)
         assertNull(doc.apps.first { it.name == "xrnsoc" }.packageName)
     }

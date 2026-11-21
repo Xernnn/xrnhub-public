@@ -20,13 +20,16 @@ const COLORS = {
   xrninsta: "var(--svc-xrninsta)",
   xrnfit: "var(--svc-xrnfit)",
   xrnhub: "var(--svc-xrnhub)",
+  xrnnote: "var(--svc-xrnnote)",
+  xrnimg: "var(--svc-xrnimg)",
   calendar: "var(--svc-calendar)",
   tailscale: "var(--svc-system)",
   ssh: "var(--svc-system)",
 };
-// xrnloops and xrnwal both have green logos, and xrninsta and xrnfit violet ones; among several
-// lines xrnwal's and xrnfit's are dashed so each pair still tells apart. Stacks keep them apart by
-// order: other services sit between them.
+// For red-green colour blindness the tiles of a lightness run together: xrnwal's yellow-green with
+// xrntube's red, xrnnote's yellow and xrnrule's orange, and xrnfit's heart red with xrnloops' and
+// xrnhome's dark greens. Among several lines xrnwal's and xrnfit's are dashed so those still tell
+// apart. Stacks keep them apart by order: other services sit between them.
 const DASHED = new Set(["xrnwal", "xrnfit"]);
 export const SERVICE_ORDER = ["xrnloops", "xrnrule", "xrnhome", "xrntube", "xrnwal", "xrninsta", "xrnhub", "calendar", "xrnfit"];
 export const colorOf = (name) => COLORS[name] ?? "var(--series)";

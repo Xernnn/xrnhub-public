@@ -19,6 +19,8 @@ xrnwal was called xrnwallet until 2026-11-21, and its folder, runit service and 
 while only the old names are there the hub reads those (`machine.home_folder`,
 `Machine.runit_path`), and the new ones win as soon as they appear, with no restart. The monitor's
 history kept under the old name takes the new one the first time the hub starts (`metrics.RENAMED`).
+xrnnote (was xrnnotes, `xrnnotes-sync`) and xrnimg (was xrnphotos, `xrnphotos-sync`) were renamed
+the same day and are read the same way.
 
 A service that isn't set up, or a file that won't parse, reads as empty. The page shows less; it
 doesn't fall over.
@@ -176,12 +178,16 @@ request or partway through one is still a line. A caller that resets or hangs up
 line, `connection dropped`, where socketserver printed a traceback the log view counted as an
 error. Every other exception keeps its traceback.
 
+xrninsta's bots say what state they're in when it changes (`bot: ok`, `covers bot: badchat: …`,
+`covers: missing: …`). Any state but `ok` is a warning, though the line has no alarming word: it
+means a bot answers no one, or a cover isn't going out.
+
 **Problems.** Each minute the page's conditions are checked and incidents opened and closed in
 `incidents`. A service that stops answering only counts after 90 seconds, since a restart takes a
 few. A reading that goes missing can't close a problem it would have to clear. A restart, a reboot
 or a gap in the samples is noted as something that happened.
 
-**Restart.** `sv restart` on a fixed list: Radicale, the six sync services and xrninsta. Never the hub, which
+**Restart.** `sv restart` on a fixed list: Radicale, the seven sync services and xrninsta. Never the hub, which
 couldn't answer; never ssh or Tailscale, which could cut off the only way in. Once a minute per
 service. It's the only thing here that acts on another service, and it touches no data.
 
@@ -311,7 +317,7 @@ carry pages of joining instructions.
 
 ## The Apps page
 
-Fourteen projects, each with where it runs and whether its repo is public, and then whatever the
+Nineteen projects, each with where it runs and whether its repo is public, and then whatever the
 hub can see of it right now: figures and short labels, no description of what each app is for.
 
 **The catalogue is written by hand.** Where an app runs lives nowhere a program could read, so
@@ -333,7 +339,9 @@ family keeps other products' names out of its apps, and each README says what it
 | Released | The service's `data/update/`: a phone app's `app.json`, an extension's `updates.xml` |
 
 xrnfit's count comes from the inventory once it counts health records, under the name `xrnfit`; the
-page needs no change for it. An answer is kept 30 seconds, and the release files are read again
+page needs no change for it. xrnnote is counted by its files, never opened: every note, task and
+attachment there is ciphertext the phone or its page made, so the hub has its size, its files and
+their times (`notes.sqlite` and its `-wal` for Last sync), and nothing from inside them. An answer is kept 30 seconds, and the release files are read again
 only when they change, so a page polling every minute costs a few `stat`s.
 
 **Versions are only where something hands them out.** On 2026-11-17 the server holds three update

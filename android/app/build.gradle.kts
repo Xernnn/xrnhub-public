@@ -23,8 +23,8 @@ android {
         applicationId = "com.xern.xrnhub"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "0.3.0"
+        versionCode = 14
+        versionName = "0.3.2"
         buildConfigField("String", "DEFAULT_ADDRESS", "\"${filled("hub.address")}\"")
         buildConfigField("String", "DEFAULT_USER", "\"${filled("hub.user")}\"")
     }

@@ -2,6 +2,7 @@
 import base64
 import http.client
 import json
+import math
 import os
 import re
 import shutil
@@ -26,7 +27,8 @@ from hublib.sources import Sources
 
 PW = "correct horse"
 NOW = int(datetime(2026, 11, 17, 12, 0, 0).timestamp())
-PUBLIC = {"xrncal-desktop", "xrnchips", "xrnhome", "xrnsoc", "xrntube"}
+# As GitHub has them on 2026-11-21: every repo but these six is public.
+PRIVATE = {"xrnnote", "xrnimg", "xrnfit", "xrnlatro", "xrnhub", "home-server"}
 ANDROID = os.path.join(support.ROOT, "android", "app", "src", "main")
 WEB = os.path.join(support.ROOT, "web")
 
@@ -45,10 +47,20 @@ def release_files(home, folder, phone=None, extension=None):
 
 
 class Catalogue(unittest.TestCase):
-    def test_there_are_fifteen_projects_each_once(self):
-        self.assertEqual(len(apps.APPS), 15)
-        self.assertEqual(len({a.name for a in apps.APPS}), 15)
-        self.assertEqual(len({a.repo for a in apps.APPS}), 15)
+    def test_there_are_nineteen_projects_each_once(self):
+        self.assertEqual(len(apps.APPS), 19)
+        self.assertEqual(len({a.name for a in apps.APPS}), 19)
+        self.assertEqual(len({a.repo for a in apps.APPS}), 19)
+
+    def test_the_keyboard_the_monitor_and_the_game_are_listed(self):
+        # xrnkey, xrnmoni and xrnlatro joined ~/Documents/Projects on 2026-11-20 and weren't on the page.
+        key, moni, latro = (apps.BY_NAME[name] for name in ("xrnkey", "xrnmoni", "xrnlatro"))
+        self.assertEqual((key.group, key.runs, key.package, key.public), ("focus", ("Phone", "Laptop"), "com.xern.xrnkey", True))
+        # xrnmoni's own hub isn't on the home server yet, so it has no service here.
+        self.assertEqual((moni.group, moni.runs, moni.service, moni.public), ("focus", ("Laptop", "Browser"), None, True))
+        self.assertEqual((latro.group, latro.runs, latro.public), ("play", ("Laptop",), False))
+        for a in (key, moni, latro):
+            self.assertEqual(a.logo, f"apps/{a.name}.svg")
 
     def test_every_project_sits_in_a_group_and_no_group_is_empty(self):
         groups = [g.id for g in apps.GROUPS]
@@ -61,8 +73,10 @@ class Catalogue(unittest.TestCase):
             self.assertLessEqual(set(a.runs), set(apps.RUNS_ON), a.name)
             self.assertEqual(len(a.runs), len(set(a.runs)), a.name)
 
-    def test_the_public_ones_are_the_five_public_repos(self):
-        self.assertEqual({a.repo for a in apps.APPS if a.public}, PUBLIC)
+    def test_the_public_ones_are_the_public_repos(self):
+        # xrnloops, xrnrule, xrnwal, xrnmail, xrnsheet and xrninsta went public on 2026-11-21, and
+        # their cards still said "Private repo".
+        self.assertEqual({a.repo for a in apps.APPS if not a.public}, PRIVATE)
 
     def test_an_app_with_a_server_has_a_service_the_monitor_watches(self):
         for a in apps.APPS:
@@ -113,6 +127,102 @@ class Catalogue(unittest.TestCase):
                 self.assertRegex(a.web, r"^/xrn[a-z]+/$")
                 self.assertEqual(a.web, f"/{a.service}/")
 
+
+
+def _hex_rgb(value):
+    return [int(value[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+
+
+def _linear(c):
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def _contrast(a, b):
+    def lum(value):
+        r, g, b_ = (_linear(c) for c in _hex_rgb(value))
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b_
+    hi, lo = sorted((lum(a), lum(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def _oklch(value):
+    r, g, b = (_linear(c) for c in _hex_rgb(value))
+    l_, m, s = (x ** (1 / 3) for x in (0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b,
+                                        0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b,
+                                        0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b))
+    L = 0.2104542553 * l_ + 0.7936177850 * m - 0.0040720468 * s
+    a = 1.9779984951 * l_ - 2.4285922050 * m + 0.4505937099 * s
+    b_ = 0.0259040371 * l_ + 0.7827717662 * m - 0.8086757660 * s
+    return L, (a * a + b_ * b_) ** 0.5, math.degrees(math.atan2(b_, a)) % 360
+
+
+class ChartColours(unittest.TestCase):
+    """A service's line and bars are in its tile's colour, on the web page and in the phone app."""
+
+    @classmethod
+    def setUpClass(cls):
+        def read(*parts):
+            with open(os.path.join(support.ROOT, *parts), encoding="utf-8") as f:
+                return f.read()
+        css = read("web", "style.css")
+        light, dark = css.split("@media (prefers-color-scheme: dark)", 1)
+        token = r"(--[\w-]+):\s*(#[0-9a-fA-F]{6});"
+        cls.light = {k: v.upper() for k, v in re.findall(token, light)}
+        cls.dark = {**cls.light, **{k: v.upper() for k, v in re.findall(token, dark.split("\n}\n", 1)[0])}}
+        logos = re.search(r"const LOGOS = \{(.*?)\};", read("web", "serverkit.js"), re.S)[1]
+        cls.logos = dict(re.findall(r'(\w+): "([^"]+)"', logos))
+        colors = re.search(r"const COLORS = \{(.*?)\};", read("web", "charts.js"), re.S)[1]
+        cls.web = dict(re.findall(r'(\w+): "var\((--[\w-]+)\)"', colors))
+        theme = read("android", "app", "src", "main", "java", "com", "xern", "xrnhub", "ui", "Theme.kt")
+        pair = r"ServiceColor\(Color\(0xFF(\w{6})\)(?:, Color\(0xFF(\w{6})\))?\)"
+        system = re.search(r"SYSTEM_COLOR = " + pair, theme)
+        cls.phone = {name: ("#" + lt, "#" + (dk or lt)) for name, lt, dk in re.findall(r'"(\w+)" to ' + pair, theme)}
+        cls.phone.update({name: ("#" + system[1], "#" + (system[2] or system[1]))
+                          for name in re.findall(r'"(\w+)" to SYSTEM_COLOR', theme)})
+
+    def tile(self, name):
+        with open(os.path.join(WEB, self.logos[name]), encoding="utf-8") as f:
+            return re.search(r'<rect [^>]*fill="(#[0-9A-Fa-f]{6})"', f.read())[1].upper()
+
+    def test_every_service_the_monitor_watches_has_a_tile_and_a_colour(self):
+        for name in [s.name for s in machine.SERVICES] + ["xrnfit"]:
+            self.assertIn(name, self.logos, name)
+            self.assertIn(name, self.web, name)
+            self.assertIn(name, self.phone, name)
+
+    def test_each_service_draws_in_its_tiles_colour(self):
+        for name, token in self.web.items():
+            with self.subTest(name):
+                self.assertEqual(self.light[token], self.tile(name))
+                self.assertEqual(self.phone[name][0], self.tile(name))
+
+    def test_in_dark_mode_each_is_a_lighter_step_of_its_tile_readable_on_the_card(self):
+        card = self.dark["--surface"]
+        for name, token in self.web.items():
+            with self.subTest(name):
+                shade, tile = self.dark[token], self.tile(name)
+                self.assertEqual(self.phone[name][1], shade)
+                self.assertGreaterEqual(_contrast(shade, card), 3.0)
+                (l1, c1, h1), (l2, _, h2) = _oklch(tile), _oklch(shade)
+                self.assertGreaterEqual(l2, l1 - 0.005)
+                if c1 > 0.05:
+                    self.assertLess(abs((h2 - h1 + 180) % 360 - 180), 4)
+
+
+    def test_the_hubs_own_colour_is_its_slate_tile(self):
+        # Where the colour stands for the hub: the installed page's colour and the phone's notifications.
+        slate = self.tile("xrnhub")
+        with open(os.path.join(WEB, "manifest.webmanifest"), encoding="utf-8") as f:
+            self.assertEqual(json.load(f)["theme_color"].upper(), slate)
+        watch = os.path.join(ANDROID, "java", "com", "xern", "xrnhub", "data", "Watch.kt")
+        with open(watch, encoding="utf-8") as f:
+            self.assertEqual("#" + re.search(r"SLATE = 0xFF(\w{6})", f.read())[1].upper(), slate)
+
+    def test_a_lone_series_stays_a_dark_neutral_that_reads_on_the_meters_tracks(self):
+        # It stands for no app, and the hub's light slate is under 3:1 on the --surface-2 tracks.
+        self.assertLess(_contrast(self.tile("xrnhub"), self.light["--surface-2"]), 3)
+        self.assertGreaterEqual(_contrast(self.light["--series"], self.light["--surface-2"]), 4.5)
+        self.assertGreaterEqual(_contrast(self.dark["--series"], self.dark["--surface-2"]), 3)
 
 class Releasing(unittest.TestCase):
     def setUp(self):
@@ -276,6 +386,23 @@ class Joining(unittest.TestCase):
         self.assertEqual(by["xrnrule"]["lastIn"], NOW - 600)
         self.assertEqual(by["xrncal"]["lastIn"], NOW - 900)
         self.assertIsNone(by["xrnwal"]["lastIn"])
+
+    def test_xrnnote_shows_its_files_and_when_they_last_changed_never_what_is_in_them(self):
+        # Every note it holds is ciphertext, so the card has the inventory's count of files and the
+        # times of notes.sqlite and its -wal: nothing read from inside them.
+        self.watcher.data["apps"].append({"name": "xrnnote", "records": 41, "unit": "files"})
+        notes = self.src.path("xrnnote", "notes.sqlite")
+        os.makedirs(os.path.dirname(notes))
+        for name, at in (("notes.sqlite", NOW - 7200), ("notes.sqlite-wal", NOW - 120)):
+            with open(self.src.path("xrnnote", name), "wb") as f:
+                f.write(b"\x01 made-up ciphertext")
+            os.utime(self.src.path("xrnnote", name), (at, at))
+        _, by = self.build()
+        notes_app = by["xrnnote"]
+        self.assertEqual((notes_app["records"], notes_app["unit"], notes_app["week"]), (41, "files", None))
+        self.assertEqual(notes_app["lastIn"], NOW - 120)
+        self.assertEqual((notes_app["service"], notes_app["web"], notes_app["package"]),
+                         ("xrnnote", "/xrnnote/", "com.xern.xrnnote"))
 
     def test_an_app_with_no_server_of_its_own_is_heard_from_through_the_hub(self):
         self.log.add(USER, [{"app": "xrnmail", "kind": "batch", "at": (NOW - 300) * 1000, "value": 4}])
@@ -482,7 +609,7 @@ class Endpoint(unittest.TestCase):
         for path in ("/api/apps", "/xrnhub/api/apps"):
             status, body = self.call(path)
             self.assertEqual(status, 200, path)
-            self.assertEqual(len(json.loads(body)["apps"]), 15, path)
+            self.assertEqual(len(json.loads(body)["apps"]), 19, path)
 
     def test_the_owner_sees_the_live_state(self):
         by = {a["name"]: a for a in json.loads(self.call("/api/apps")[1])["apps"]}

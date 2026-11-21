@@ -72,7 +72,7 @@ LOG_LEVELS = ("info", "warn", "error")  # this page asking; nobody wants it topp
 
 
 # Services renamed since rows were written under their old names: old -> new.
-RENAMED = {"xrnwallet": "xrnwal"}
+RENAMED = {"xrnwallet": "xrnwal", "xrnnotes": "xrnnote", "xrnphotos": "xrnimg"}
 # Each table, and its column naming a service or an app.
 NAMED = (
     ("service", "name"), ("traffic", "name"), ("incidents", "target"), ("paths", "name"), ("logins", "name"),

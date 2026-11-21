@@ -278,7 +278,8 @@ private fun logoOf(service: String): Int? = when (service) {
     "xrnhome" -> R.drawable.logo_xrnhome
     "xrnwal" -> R.drawable.logo_xrnwal
     "xrninsta" -> R.drawable.logo_xrninsta
-    "xrnphotos" -> R.drawable.logo_xrnphotos
+    "xrnimg" -> R.drawable.logo_xrnimg
+    "xrnnote" -> R.drawable.logo_xrnnote
     "xrnfit" -> R.drawable.logo_xrnfit
     "xrnhub" -> R.drawable.logo_xrnhub
     "tailscale" -> R.drawable.logo_tailscale

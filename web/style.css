@@ -27,6 +27,8 @@
   --open-bg: #dcfce7;
   --warn: #a16207;
   --warn-bg: #fef3c7;
+  /* A lone series stands for no app, so it's a dark neutral rather than the hub's tile: #8b8f9b is
+     3.2:1 on white and 2.7:1 on the meters' --surface-2 tracks, this 7.6:1 and 6.4:1. */
   --series: #475569;
   --level-1: #c9ecd4;
   --level-2: #8fd8a7;
@@ -37,16 +39,19 @@
      reads as a service. Validated as a pair for colour blindness and contrast on --surface. */
   --pair-1: #0891b2;
   --pair-2: #9c36b5;
-  /* Each service's chart colour is its logo's tile colour (web/apps/), so a line reads as its app. */
-  --svc-calendar: #1c6fd8;
-  --svc-xrnloops: #2b9348;
-  --svc-xrnrule: #e8590c;
-  --svc-xrnwal: #5c940d;
-  --svc-xrninsta: #7048e8;
-  --svc-xrnfit: #7048e8;
-  --svc-xrnhome: #b8860b;
-  --svc-xrntube: #e03131;
-  --svc-xrnhub: #475569;
+  /* Each service's chart colour is its logo's tile colour (web/apps/), so a line reads as its app.
+     Every tile is at least 3:1 on --surface, since its white glyph is. */
+  --svc-calendar: #308ffe;
+  --svc-xrnloops: #037200;
+  --svc-xrnrule: #e86c05;
+  --svc-xrnwal: #7b9c17;
+  --svc-xrninsta: #592ac4;
+  --svc-xrnfit: #a20129;
+  --svc-xrnhome: #6c6104;
+  --svc-xrntube: #ff2238;
+  --svc-xrnhub: #8b8f9b;
+  --svc-xrnnote: #b68a04;
+  --svc-xrnimg: #0f889f;
   --svc-system: #52525b;
   --tip: #1b1b1e;
   --on-tip: #f4f4f5;
@@ -82,16 +87,21 @@
     --on-level-3: #0b2a16;
     --pair-1: #1098ad;
     --pair-2: #cc5de8;
-    /* Lighter steps of the same hue where the logo colour is too dark for a dark card. */
-    --svc-calendar: #2f7fe9;
-    --svc-xrnloops: #2b9348;
-    --svc-xrnrule: #e8590c;
-    --svc-xrnwal: #5c940d;
-    --svc-xrninsta: #9775fa;
-    --svc-xrnfit: #9775fa;
-    --svc-xrnhome: #b8860b;
-    --svc-xrntube: #e03131;
-    --svc-xrnhub: #94a3b8;
+    /* Lighter steps of the same hue (OKLCH) where the logo colour is too dark for a dark card:
+       the four dark tiles, to just past 3:1. That puts each beside its light partner, so the
+       partner steps up too and the pair stays apart as the tiles are: xrntube above xrnfit,
+       xrnnote above xrnhome. xrnhub steps above the system grey it shares the log chart with. */
+    --svc-calendar: #308ffe;
+    --svc-xrnloops: #2c8b27;
+    --svc-xrnrule: #e86c05;
+    --svc-xrnwal: #7b9c17;
+    --svc-xrninsta: #7f5df6;
+    --svc-xrnfit: #d54451;
+    --svc-xrnhome: #847a29;
+    --svc-xrntube: #ff847e;
+    --svc-xrnhub: #c0c4d1;
+    --svc-xrnnote: #cda02f;
+    --svc-xrnimg: #0f889f;
     --svc-system: #a1a1aa;
     --tip: #f4f4f5;
     --on-tip: #1b1b1e;

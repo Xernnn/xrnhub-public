@@ -540,7 +540,7 @@ class Watcher:
     def restart(self, name, now=None):
         """Restarts a service someone picked. (worked, what `sv` said)."""
         now = now or self.clock()
-        service = BY_NAME.get(name)
+        service = BY_NAME.get(name) if isinstance(name, str) else None
         if not service or not service.restartable:
             raise BadRestart(name)
         if now - self.restarted.get(name, 0) < RESTART_GAP_S:

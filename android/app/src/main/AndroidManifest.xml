@@ -13,10 +13,12 @@
         <package android:name="com.xern.xrnloops" />
         <package android:name="com.xern.xrnrule" />
         <package android:name="com.xern.xrnwal" />
-        <package android:name="com.xern.xrnphotos" />
+        <package android:name="com.xern.xrnimg" />
+        <package android:name="com.xern.xrnnote" />
         <package android:name="com.xern.xrnhome" />
         <package android:name="com.xern.xrnfit" />
         <package android:name="com.xern.xrnchips" />
+        <package android:name="com.xern.xrnkey" />
     </queries>
 
     <application
