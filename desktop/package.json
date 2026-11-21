@@ -1,0 +1,52 @@
+{
+  "name": "xrnhub",
+  "productName": "xrnhub",
+  "version": "0.1.1",
+  "description": "Every page on the home server in one window: the hub, habits, blocks, home, insta and calendars",
+  "author": "xrn",
+  "desktopName": "xrnhub.desktop",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "node stage.js && electron .",
+    "test": "node --test test/*.test.js",
+    "test:window": "node stage.js && node test/window.js",
+    "pack": "node stage.js --icon && electron-builder --linux AppImage --x64",
+    "app:install": "bash install.sh"
+  },
+  "devDependencies": {
+    "electron": "^44.10.1",
+    "electron-builder": "^26.18.0"
+  },
+  "overrides": {
+    "app-builder-lib": {
+      "minimatch@>=7.0.0 <11.0.1": "^11.0.1"
+    }
+  },
+  "build": {
+    "appId": "app.xrnhub.desktop",
+    "productName": "xrnhub",
+    "executableName": "xrnhub",
+    "npmRebuild": false,
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": ["main.js", "pages.js", "logins.js", "store.js", "theme.js", "preload.js", "shell/**", "package.json"],
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "category": "Network;Monitor;",
+      "synopsis": "The home server's pages in one window",
+      "description": "The hub's Server, Today, Review and Apps pages, and the habits, blocks, home, insta and calendar pages, in one window that stays signed in",
+      "icon": "build/icon.png",
+      "artifactName": "xrnhub-${version}.AppImage"
+    }
+  }
+}

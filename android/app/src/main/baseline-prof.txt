@@ -1,0 +1,4 @@
+# Compiled ahead of time on install, so a screen is quick the first time it opens rather than only
+# after Android has watched it being used. The libraries bring their own lists; this covers the app.
+HSPLcom/xern/xrnhub/**;->**(**)**
+Lcom/xern/xrnhub/**;

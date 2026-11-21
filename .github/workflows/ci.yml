@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only: CI checks code and needs to change nothing on the repository.
+permissions:
+  contents: read
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          # The oldest Python the README supports; the laptop and the phone run newer ones.
+          python-version: "3.11"
+          cache: pip
+          # No requirements file to key the cache on: this workflow is what names bcrypt.
+          cache-dependency-path: .github/workflows/ci.yml
+
+      - name: Install bcrypt
+        run: pip install bcrypt
+
+      # discover, not the README's list of six, so a new test file runs here too.
+      - name: Server tests
+        working-directory: tests
+        run: python -m unittest discover

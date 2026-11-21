@@ -1,0 +1,300 @@
+/* Today and Review: the tiles, the small charts in them, and each page's rows. Cards side by side
+   are one height (a row stretches them) or split a row exactly in half; tiles in a row are one
+   height. Colours are the shared tokens in style.css; a chart takes its app's colour as --viz. */
+
+:root { --rb-past: rgb(0 0 0 / 0.07); }
+
+@media (prefers-color-scheme: dark) {
+  :root { --rb-past: rgb(0 0 0 / 0.28); }
+}
+
+/* ---- tiles ---------------------------------------------------------------------------------- */
+
+.dt-tiles { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.dt-tile {
+  --viz: var(--series);
+  display: flex;
+  flex: 1 1 calc(50% - 6px);
+  flex-direction: column;
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+}
+
+.dt-tile.wide { flex-basis: 100%; }
+
+@media (min-width: 640px) {
+  .dt-tile { flex-basis: calc(25% - 9px); }
+
+  .dt-tile.wide { flex-basis: calc(50% - 6px); }
+}
+
+@media (min-width: 1000px) {
+  .dt-tiles { flex-wrap: nowrap; }
+
+  .dt-tile { flex: 1 1 0; }
+
+  .dt-tile.wide { flex: 2 1 0; }
+}
+
+.dt-label { color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.dt-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  margin-top: 2px;
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.dt-value small { color: var(--muted); font-size: 13px; font-weight: 600; }
+
+.dt-value.warn { color: var(--warn); }
+
+.dt-delta { color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+
+.dt-delta.good { color: var(--open); }
+
+.dt-delta.bad { color: var(--blocked); }
+
+.dt-viz { margin-top: auto; padding-top: 10px; }
+
+.dt-foot { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 8px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.dt-fig { white-space: nowrap; }
+
+.dt-fig b { color: var(--text); font-weight: 600; }
+
+.dt-fig.warn { color: var(--warn); font-weight: 600; }
+
+/* ---- small charts --------------------------------------------------------------------------- */
+
+.mini-bars, .mini-line, .burn-up { position: relative; height: 40px; }
+
+.mini-bars { display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid var(--line); }
+
+.mb-col { display: flex; flex: 1 1 0; align-items: flex-end; min-width: 0; height: 100%; }
+
+.mb-col i { display: block; width: 100%; border-radius: 2px 2px 0 0; background: var(--viz); opacity: 0.38; }
+
+.mb-col.mark i { opacity: 1; }
+
+.mb-line { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--muted); pointer-events: none; }
+
+.mini-line svg, .burn-up svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+.mini-line path { fill: none; stroke: var(--viz); stroke-width: 1.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: 0.5; }
+
+.mini-line i { position: absolute; width: 6px; height: 6px; margin: 0 0 -3px -3px; border-radius: 50%; background: var(--viz); }
+
+.mini-line i.mark { width: 9px; height: 9px; margin: 0 0 -4.5px -4.5px; box-shadow: 0 0 0 2px var(--surface); }
+
+.burn-up { border-bottom: 1px solid var(--line); }
+
+.bu-budget, .bu-pace { stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+.bu-budget { stroke: var(--outline); stroke-dasharray: 4 3; }
+
+.bu-pace { stroke: var(--muted); stroke-dasharray: 2 3; opacity: 0.6; }
+
+.bu-area { fill: var(--viz); opacity: 0.16; }
+
+.bu-line { fill: none; stroke: var(--viz); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+
+.bu-line.over { stroke: var(--warn); }
+
+.bu-today { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--muted); pointer-events: none; }
+
+.bu-hits { position: absolute; inset: 0; display: flex; }
+
+.bu-hits span { flex: 1 1 0; }
+
+@media (hover: hover) {
+  .mb-col:hover i, .bu-hits span:hover { box-shadow: inset 0 0 0 999px rgb(127 127 127 / 0.15); }
+}
+
+/* ---- Today ---------------------------------------------------------------------------------- */
+
+.today { display: grid; gap: 12px; }
+
+.dt-row { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.dt-row > .slot { display: flex; flex: 1 1 300px; }
+
+.dt-row > .slot > * { flex: 1; min-width: 0; }
+
+.dt-row.main > .slot-habits { flex: 2 1 440px; }
+
+/* On a phone the habits come first: they're what the page is opened to tick. */
+@media (max-width: 639px) {
+  .today { display: flex; flex-direction: column; }
+
+  .today .dt-row { display: contents; }
+
+  .today .dt-row > .slot { flex: none; }
+
+  .today .slot-habits { order: -1; }
+}
+
+/* The habits' head reads as every card's does; a day picked from the strip stands out. */
+.today .habit-head { min-height: 38px; margin-bottom: 8px; }
+
+.today .habit-day { color: var(--muted); font-size: 14px; font-weight: 600; }
+
+.today .habit-day.picked { color: var(--text); font-size: 16px; font-weight: 700; }
+
+/* The day as a ribbon of hours. */
+.ribbon { margin-bottom: 12px; }
+
+.rb-track { position: relative; height: calc(14px + var(--lanes, 1) * 8px); border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+
+.rb-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }
+
+.rb-past { position: absolute; top: 0; bottom: 0; left: 0; background: var(--rb-past); }
+
+.rb-event { position: absolute; border-radius: 4px; box-shadow: 0 0 0 1px var(--surface-2); cursor: default; }
+
+.rb-event.over { opacity: 0.45; }
+
+.rb-now { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--text); }
+
+.rb-hours { position: relative; height: 14px; margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 14px; font-variant-numeric: tabular-nums; }
+
+.rb-hours span { position: absolute; transform: translateX(-50%); }
+
+.rb-hours span:first-child { transform: none; }
+
+.rb-hours span:last-child { transform: translateX(-100%); }
+
+.day-card { display: flex; flex-direction: column; }
+
+.day-card .next-day { margin-top: 6px; }
+
+.day-soon { margin-top: auto; padding-top: 12px; }
+
+.day-soon .chip b { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.day-soon .chip.near b { color: var(--blocked); }
+
+/* Screen time: what each limit has left, and what each gate waits for. */
+.today .limits { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); margin-bottom: 6px; }
+
+.today .limit .sub { font-size: 12px; }
+
+.today .limit .meter i { background: var(--svc-xrnrule); }
+
+.today .limit.low .meter i { background: var(--warn); }
+
+.today .limit.out .meter i { background: var(--blocked); }
+
+.today .gate { flex-wrap: wrap; row-gap: 6px; margin-bottom: 0; }
+
+.gate-name { flex: 1 1 auto; min-width: 0; }
+
+.today .needs { flex-wrap: wrap; }
+
+.today .need { width: auto; min-width: 32px; padding: 0 8px; font-size: 14px; }
+
+/* ---- Review --------------------------------------------------------------------------------- */
+
+.review { display: grid; gap: 12px; }
+
+.rv-row { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.rv-row > .card { flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; }
+
+.rv-row:empty { display: none; }
+
+/* The year: a weekday's average at the end of its row. */
+.year-body.with-days { display: grid; grid-template-columns: 16px minmax(0, 1fr) 64px; gap: 6px; }
+
+.year-head .year-months { margin-right: 70px; }
+
+.weekday-bars { display: grid; grid-template-rows: repeat(7, minmax(0, 1fr)); gap: 3px; }
+
+.weekday-bars span { position: relative; display: flex; align-items: center; min-height: 0; }
+
+.weekday-bars i { display: block; height: 70%; border-radius: 0 3px 3px 0; background: var(--level-3); }
+
+.weekday-bars b { margin-left: 4px; color: var(--muted); font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Health and the habits spread their rows over the height their row gives them. */
+.rv-row .card > .fills { display: flex; flex: 1 1 auto; flex-direction: column; }
+
+.fills > .strength, .fills > .body-row { flex: 1 1 auto; max-height: 52px; }
+
+.fills > .body-head { flex: none; margin-bottom: 2px; }
+
+.card-head .link { flex: none; }
+
+.review .legend b { margin-left: 2px; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.key.money-in { background: var(--svc-xrnwal); }
+
+.key.money-out { background: var(--outline); }
+
+.key.money-line { height: 0; border-top: 2px dashed var(--warn); border-radius: 0; background: none; }
+
+.money-rank .rank { grid-template-columns: minmax(0, 32%) minmax(0, 1fr) auto; }
+
+.money-rank .rank b { font-weight: 600; }
+
+.money-rank .rank-bar i { background: var(--svc-xrnwal); }
+
+/* Money: months as columns, what counted against the budget under what was left out of it. */
+.month-cols { --viz: var(--svc-xrnwal); }
+
+.mc-plot { position: relative; margin-left: 36px; }
+
+.mc-grid span {
+  position: absolute;
+  left: -36px;
+  right: 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-cols { position: absolute; inset: 0; display: flex; gap: 6px; border-bottom: 1px solid var(--outline); }
+
+.mc-col { display: flex; flex: 1 1 0; flex-direction: column-reverse; align-items: center; gap: 1px; min-width: 0; height: 100%; }
+
+.mc-col i { display: block; width: 100%; max-width: 26px; flex: none; }
+
+.mc-col i:last-child { border-radius: 4px 4px 0 0; }
+
+.mc-col .in { background: var(--viz); opacity: 0.55; }
+
+.mc-col.now .in { opacity: 1; }
+
+.mc-col .out { background: var(--outline); }
+
+.mc-budget { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--warn); pointer-events: none; }
+
+.mc-x { display: flex; gap: 6px; margin: 6px 0 0 36px; color: var(--muted); font-size: 11px; }
+
+.mc-x span { flex: 1 1 0; min-width: 0; text-align: center; white-space: nowrap; }
+
+@media (hover: hover) {
+  .mc-col:hover i { filter: brightness(1.12); }
+}
+
+.money-figures { display: flex; flex-wrap: wrap; gap: 4px 22px; margin-bottom: 12px; }
+
+.money-figures .dt-value { margin: 0; }
+
+.money-figures .dt-label { font-size: 12px; font-weight: 500; }
+
+.spend-bar { display: flex; height: 12px; margin-bottom: 14px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+
+.spend-bar i { display: block; height: 100%; background: var(--svc-xrnwal); }
+
+.spend-bar i.over { background: var(--warn); }

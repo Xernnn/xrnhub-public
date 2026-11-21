@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="light dark">
+  <title>xrnhub</title>
+  <link rel="stylesheet" href="shell.css">
+  <script src="shell.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <!-- The family's tile stands for the name; beside it, which server this is. -->
+      <img src="vendor/icon.svg" alt="xrnhub">
+      <div class="label"><span id="host"></span></div>
+    </div>
+    <nav id="nav" aria-label="Pages"></nav>
+    <div class="foot">
+      <button type="button" id="status" class="status" aria-live="polite"><span class="dot"></span><span class="label"></span></button>
+      <button type="button" id="settings" class="icon-button" title="Settings" aria-label="Settings"></button>
+    </div>
+  </aside>
+  <!-- The pages are drawn over this sheet, exactly; it shows through only around their corners, and
+       holds the panels when there is no page to show. -->
+  <main id="sheet"><div id="content"></div></main>
+</body>
+</html>
